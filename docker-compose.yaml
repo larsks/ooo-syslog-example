@@ -1,0 +1,29 @@
+version: "3"
+
+services:
+
+  haproxy-sidecar:
+    build: rsyslog-stdout
+    volumes:
+      - sockets:/sockets
+
+  backend:
+    image: httpd
+    volumes:
+      - ./content:/usr/local/apache2/htdocs/
+
+  # needs: log /sockets/log local0 debug
+  haproxy:
+    depends_on:
+      - haproxy-sidecar
+    image: tripleoupstream/centos-binary-haproxy
+    volumes:
+      - ./haproxy.cfg:/etc/haproxy/haproxy.cfg
+      - ./config.json:/var/lib/kolla/config_files/config.json:ro
+      - sockets:/var/lib/haproxy/sockets
+      - sockets:/sockets
+    environment:
+      KOLLA_CONFIG_STRATEGY: COPY_ONCE
+
+volumes:
+  sockets:
